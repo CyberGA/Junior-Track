@@ -192,7 +192,7 @@ export default function Home() {
    * needing to make a digital signature to authorize the transaction being sent. Metamask exposes a Signer API to allow your website to
    * request signatures from the user using Signer functions.
    */
-  const getProviderOrSigner = async () => {
+  const getProviderOrSigner = async (needSigner = false) => {
     // Connect to Metamask
     // Since we store `web3Modal` as a reference, we need to access the `current` value to get access to the underlying object
     const provider = await web3ModalRef.current.connect();
@@ -209,7 +209,10 @@ export default function Home() {
     const address = await signer.getAddress();
     // Calls the function to set the ENS or Address
     await setENSOrAddress(address, web3Provider);
-    return signer;
+     if (needSigner) {
+      return signer;
+    }
+    return web3Provider;
   };
 
   /*
