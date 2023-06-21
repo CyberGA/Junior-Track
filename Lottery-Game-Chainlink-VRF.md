@@ -15,13 +15,13 @@ So we can use some web2 technologies to generate the randomness and then use the
 - They act as bridges between blockchains and the external world.
 - However it is important to note that the blockchain oracle is not itself the data source but its job is to query, verify and authenticate the outside data and then further pass it to the smart contract.
 
-Today we will learn about one of oracles named Chainlink VRF's
+Today we will learn about one of oracles named Chainlink VRFs
 
 Let's goo 🚀
 
 ## Intro
 
-- Chainlink VRF's are oracles which used to generate random values.
+- Chainlink VRFs are oracles which are used to generate random values.
 - These values are verified using cryptographic proofs.
 - These proofs prove that the results weren't tampered or manipulated by oracle operators, users, miners etc.
 - Proofs are published on-chain so that they can be verified.
@@ -84,7 +84,7 @@ Make sure you select `Create a Javascript Project` and then follow the instructi
 If you are a Windows User, you'll have to add one more dependency. It is given below:
 
 ```bash
-npm install --save-dev @nomicfoundation/hardhat-toolbox
+npm install --save-dev @nomicfoundation/hardhat-toolbox@2
 ```
 
 In the same terminal now install `@openzeppelin/contracts` as we would be importing Openzeppelin's Contracts
@@ -103,7 +103,7 @@ Now create a new file inside the `contracts` directory called `RandomWinnerGame.
 
 ```solidity
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
@@ -155,6 +155,8 @@ contract RandomWinnerGame is VRFConsumerBase, Ownable {
     function startGame(uint8 _maxPlayers, uint256 _entryFee) public onlyOwner {
         // Check if there is a game already running
         require(!gameStarted, "Game is currently running");
+        // Check if _maxPlayers is greater than 0
+        require(_maxPlayers > 0, "You cannot create a game with max players limit equal 0");
         // empty the players array
         delete players;
         // set the max players for this game
@@ -385,13 +387,13 @@ module.exports = {
 Create a new folder named as `constants` and inside that add a new file named `index.js`. Add these lines to the `index.js` file:
 
 ```javascript
-const { ethers, BigNumber } = require("hardhat");
+const { ethers } = require("hardhat");
 
 const LINK_TOKEN = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
 const VRF_COORDINATOR = "0x8C7382F9D8f56b33781fE506E897a4F1e2d17255";
 const KEY_HASH =
   "0x6e75b569a01ef56d18cab6a8e71e6600d6ce853834d4a5748b720d06f878b3a4";
-const FEE = ethers.utils.parseEther("0.0001");
+const FEE = ethers.parseEther("0.0001");
 module.exports = { LINK_TOKEN, VRF_COORDINATOR, KEY_HASH, FEE };
 ```
 
@@ -406,25 +408,19 @@ const { FEE, VRF_COORDINATOR, LINK_TOKEN, KEY_HASH } = require("../constants");
 
 async function main() {
   /*
- A ContractFactory in ethers.js is an abstraction used to deploy new smart contracts,
+ DeployContract in ethers.js is an abstraction used to deploy new smart contracts,
  so randomWinnerGame here is a factory for instances of our RandomWinnerGame contract.
  */
-  const randomWinnerGame = await ethers.getContractFactory("RandomWinnerGame");
-  // deploy the contract
-  const deployedRandomWinnerGameContract = await randomWinnerGame.deploy(
-    VRF_COORDINATOR,
-    LINK_TOKEN,
-    KEY_HASH,
-    FEE
-  );
+   // deploy the contract
+   const randomWinnerGame = await hre.ethers.deployContract(
+     "RandomWinnerGame",
+     [VRF_COORDINATOR, LINK_TOKEN, KEY_HASH, FEE]
+   );
 
-  await deployedRandomWinnerGameContract.deployed();
+  await randomWinnerGame.waitForDeployment();
 
-  // print the address of the deployed contract
-  console.log(
-    "Verify Contract Address:",
-    deployedRandomWinnerGameContract.address
-  );
+   // print the address of the deployed contract
+   console.log("Verify Contract Address:", randomWinnerGame.target);
 
   console.log("Sleeping.....");
   // Wait for etherscan to notice that the contract has been deployed
@@ -432,7 +428,7 @@ async function main() {
 
   // Verify the contract after deploying
   await hre.run("verify:verify", {
-    address: deployedRandomWinnerGameContract.address,
+    address: randomWinnerGame.target,
     constructorArguments: [VRF_COORDINATOR, LINK_TOKEN, KEY_HASH, FEE],
   });
 }

@@ -24,6 +24,8 @@ Lets goo 🚀🚀🚀
 
 #### Write some code to verify
 
+> **⚠️ WARNING:** Following the previous topics, we assume that you have already **created a new wallet for development purposes only with no live funds**. It is essential to only connect to your newly created development Metamask (or any other product you use) wallet when practicing or testing deployments. **Accidential usage of live wallets can result real ETH usage and an unwanted financial cost.**
+
 Open up a terminal and execute these commands
 
 ```bash
@@ -99,23 +101,22 @@ POLYGONSCAN_KEY="polygonscan-api-key-token-here"
 - Lets deploy the contract to `mumbai` network. Create a new file, or replace the existing default one, named `deploy.js` under the `scripts` folder. Notice how we are using code to verify the contract.
 
   ```javascript
-  const { ethers } = require("hardhat");
+  const hre = require("hardhat");
   require("dotenv").config({ path: ".env" });
 
   async function main() {
     /*
-    A ContractFactory in ethers.js is an abstraction used to deploy new smart contracts,
+    DeployContract in ethers.js is an abstraction used to deploy new smart contracts,
     so verifyContract here is a factory for instances of our Verify contract.
     */
-    const verifyContract = await ethers.getContractFactory("Verify");
 
     // deploy the contract
-    const deployedVerifyContract = await verifyContract.deploy();
+    const VerifyContract = await hre.ethers.deployContract("Verify");
 
-    await deployedVerifyContract.deployed();
+    await VerifyContract.waitForDeployment();
 
     // print the address of the deployed contract
-    console.log("Verify Contract Address:", deployedVerifyContract.address);
+    console.log("Verify Contract Address:", VerifyContract.target);
 
     console.log("Sleeping.....");
     // Wait for etherscan to notice that the contract has been deployed
@@ -123,7 +124,7 @@ POLYGONSCAN_KEY="polygonscan-api-key-token-here"
 
     // Verify the contract after deploying
     await hre.run("verify:verify", {
-      address: deployedVerifyContract.address,
+      address: VerifyContract.target,
       constructorArguments: [],
     });
   }
